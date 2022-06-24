@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.Objects;
 
 public class LeituraDeArquivos implements Runnable {
-    private File arquivo;
-    private BarraDeProgresso barraDeProgresso;
-    private Map<String, BigDecimal> totaisPorDestinatario;
+    private final File arquivo;
+    private final BarraDeProgresso barraDeProgresso;
+    private final Map<String, BigDecimal> totaisPorDestinatario;
     private final LeitorCSV<NotaFiscalItem> leitor = new LeitorCSV<>();
 
     public LeituraDeArquivos(File arquivo, Map<String, BigDecimal> totaisPorDestinatario, BarraDeProgresso barraDeProgresso) {
@@ -25,11 +25,15 @@ public class LeituraDeArquivos implements Runnable {
     public void run() {
         checaSeEhCSV(arquivo);
 
+        System.out.println("Inicio");
+
         List<NotaFiscalItem> notaFiscalItems = leitor.leia(arquivo, NotaFiscalItem.class);
 
         agrupaTotal(notaFiscalItems, totaisPorDestinatario);
 
-        barraDeProgresso.incrementa();
+        synchronized (barraDeProgresso) {
+            barraDeProgresso.incrementa();
+        }
     }
 
     private void agrupaTotal(List<NotaFiscalItem> notaFiscalItems, Map<String, BigDecimal> totaisPorDestinatario) {

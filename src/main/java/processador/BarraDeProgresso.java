@@ -4,7 +4,6 @@ class BarraDeProgresso {
 
     private final int TAMANHO_MAXIMO_DA_BARRA = 100;
     private final int totalDeArquivos;
-
     private int arquivosProcessados = 0;
 
     BarraDeProgresso(int totalDeArquivos) {
