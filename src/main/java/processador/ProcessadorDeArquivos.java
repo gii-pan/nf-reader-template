@@ -7,36 +7,41 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
-public class ProcessadorDeArquivos {
+public class ProcessadorDeArquivos  {
 
     private final EscritorCSV escritor = new EscritorCSV();
     private final RelatorioNFConversor conversor = new RelatorioNFConversor();
+    private final List<Future<Map<String, BigDecimal>>> futureTotal = new ArrayList<>();
 
-    public void processaArquivosDo(String diretorio) {
+    public void processaArquivosDo(String diretorio) throws ExecutionException, InterruptedException {
 
-        Map<String, BigDecimal> totaisPorDestinatario = new ConcurrentHashMap<>();
+        Map<String,BigDecimal> futureUnido = new HashMap<>();
 
         Set<File> arquivos = listFilesFrom(diretorio);
 
         BarraDeProgresso barraDeProgresso = new BarraDeProgresso(arquivos.size());
 
-        ExecutorService threadPool = Executors.newCachedThreadPool();
+        ExecutorService threadPool = Executors.newFixedThreadPool(2, new FabricaDeThreads());
 
         for (File arquivo : arquivos) {
-
-            threadPool.execute(new LeituraDeArquivos(arquivo, totaisPorDestinatario, barraDeProgresso));
-//            System.out.println(threadPool.getClass().getName());
+            Future<Map<String, BigDecimal>> futures = threadPool.submit(new LeituraDeArquivos(arquivo, barraDeProgresso));
+            futureTotal.add(futures);
         }
 
-        List<RelatorioNF> relatorioNFs = conversor.converte(totaisPorDestinatario);
+        for (Future<Map<String, BigDecimal>> future: futureTotal){
+            futureUnido = future.get();
+        }
+
+        List<RelatorioNF> relatorioNFs = conversor.converte(futureUnido);
 
         escritor.escreve(relatorioNFs, Path.of("src/main/resources/relatorio/relatorio.csv"));
     }

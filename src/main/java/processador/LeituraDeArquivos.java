@@ -5,35 +5,36 @@ import io.LeitorCSV;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class LeituraDeArquivos implements Runnable {
+public class LeituraDeArquivos implements Callable<Map<String,BigDecimal>> {
     private final File arquivo;
     private final BarraDeProgresso barraDeProgresso;
-    private final Map<String, BigDecimal> totaisPorDestinatario;
+    private final Map<String, BigDecimal> totaisPorDestinatario = new ConcurrentHashMap<>();
     private final LeitorCSV<NotaFiscalItem> leitor = new LeitorCSV<>();
 
-    public LeituraDeArquivos(File arquivo, Map<String, BigDecimal> totaisPorDestinatario, BarraDeProgresso barraDeProgresso) {
+
+    public LeituraDeArquivos(File arquivo, BarraDeProgresso barraDeProgresso) {
         this.arquivo = arquivo;
-        this.totaisPorDestinatario = totaisPorDestinatario;
         this.barraDeProgresso = barraDeProgresso;
     }
 
     @Override
-    public void run() {
+    public Map<String, BigDecimal> call() {
         checaSeEhCSV(arquivo);
-
-        System.out.println("Inicio");
 
         List<NotaFiscalItem> notaFiscalItems = leitor.leia(arquivo, NotaFiscalItem.class);
 
         agrupaTotal(notaFiscalItems, totaisPorDestinatario);
 
-        synchronized (barraDeProgresso) {
-            barraDeProgresso.incrementa();
-        }
+        barraDeProgresso.incrementa();
+
+        return totaisPorDestinatario;
     }
 
     private void agrupaTotal(List<NotaFiscalItem> notaFiscalItems, Map<String, BigDecimal> totaisPorDestinatario) {

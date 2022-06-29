@@ -11,7 +11,7 @@ class BarraDeProgresso {
     }
 
 
-    void incrementa() {
+    synchronized void incrementa() {
         if (arquivosProcessados < totalDeArquivos) {
             arquivosProcessados++;
         }
