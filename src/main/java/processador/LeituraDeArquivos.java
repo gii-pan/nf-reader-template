@@ -10,12 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class LeituraDeArquivos implements Callable<Map<String,BigDecimal>> {
     private final File arquivo;
     private final BarraDeProgresso barraDeProgresso;
-    private final Map<String, BigDecimal> totaisPorDestinatario = new ConcurrentHashMap<>();
+    private final Map<String, BigDecimal> totaisPorDestinatario = new HashMap<>();
     private final LeitorCSV<NotaFiscalItem> leitor = new LeitorCSV<>();
 
 

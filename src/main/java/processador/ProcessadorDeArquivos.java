@@ -20,11 +20,11 @@ public class ProcessadorDeArquivos  {
 
     private final EscritorCSV escritor = new EscritorCSV();
     private final RelatorioNFConversor conversor = new RelatorioNFConversor();
-    private final List<Future<Map<String, BigDecimal>>> futureTotal = new ArrayList<>();
+    private final List<Future<Map<String, BigDecimal>>> listaDeFuture = new ArrayList<>();
 
     public void processaArquivosDo(String diretorio) throws ExecutionException, InterruptedException {
 
-        Map<String,BigDecimal> futureUnido = new HashMap<>();
+        Map<String,BigDecimal> totaisPorDestinatario = new HashMap<>();
 
         Set<File> arquivos = listFilesFrom(diretorio);
 
@@ -34,14 +34,14 @@ public class ProcessadorDeArquivos  {
 
         for (File arquivo : arquivos) {
             Future<Map<String, BigDecimal>> futures = threadPool.submit(new LeituraDeArquivos(arquivo, barraDeProgresso));
-            futureTotal.add(futures);
+            listaDeFuture.add(futures);
         }
 
-        for (Future<Map<String, BigDecimal>> future: futureTotal){
-            futureUnido = future.get();
+        for (Future<Map<String, BigDecimal>> future: listaDeFuture){
+            agrupaTotaisPorDestinatarios(totaisPorDestinatario, future.get());
         }
 
-        List<RelatorioNF> relatorioNFs = conversor.converte(futureUnido);
+        List<RelatorioNF> relatorioNFs = conversor.converte(totaisPorDestinatario);
 
         escritor.escreve(relatorioNFs, Path.of("src/main/resources/relatorio/relatorio.csv"));
     }
@@ -50,5 +50,14 @@ public class ProcessadorDeArquivos  {
         return Stream.of(requireNonNull(new File(diretorio).listFiles()))
                 .filter(file -> !file.isDirectory())
                 .collect(Collectors.toSet());
+    }
+
+    private void agrupaTotaisPorDestinatarios(Map<String, BigDecimal> totaisPorDestinatarios, Map<String, BigDecimal> futureMap) {
+        for(String name : futureMap.keySet()) {
+            totaisPorDestinatarios.putIfAbsent(name, futureMap.get(name));
+            if(totaisPorDestinatarios.containsKey(name)) {
+                totaisPorDestinatarios.put(name,totaisPorDestinatarios.get(name).add(futureMap.get(name)));
+            }
+        }
     }
 }
