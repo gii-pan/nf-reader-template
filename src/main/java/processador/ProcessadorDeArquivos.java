@@ -1,11 +1,10 @@
 package processador;
 
-import dto.RelatorioNF;
 import io.EscritorCSV;
+import model.Relatorio;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 public class ProcessadorDeArquivos  {
 
     private final EscritorCSV escritor = new EscritorCSV();
+    private final GeracaoRelatorio gerador = new GeracaoRelatorio();
     private final RelatorioNFConversor conversor = new RelatorioNFConversor();
     private final List<Future<Map<String, BigDecimal>>> listaDeFuture = new ArrayList<>();
 
@@ -41,9 +41,14 @@ public class ProcessadorDeArquivos  {
             agrupaTotaisPorDestinatarios(totaisPorDestinatario, future.get());
         }
 
-        List<RelatorioNF> relatorioNFs = conversor.converte(totaisPorDestinatario);
+        List<Relatorio> relatorioNFs = conversor.converte(totaisPorDestinatario);
+//
+//        escritor.escreve(relatorioNFs, Path.of("src/main/resources/relatorio/relatorio.csv"));
 
-        escritor.escreve(relatorioNFs, Path.of("src/main/resources/relatorio/relatorio.csv"));
+//        List<Relatorio> relatorioNFs = gerador.recebeTotaisPorDestinatarios(totaisPorDestinatario);
+        gerador.geraRelatorio(relatorioNFs);
+
+
     }
 
     private Set<File> listFilesFrom(String diretorio) {
@@ -56,8 +61,18 @@ public class ProcessadorDeArquivos  {
         for(String name : futureMap.keySet()) {
             totaisPorDestinatarios.putIfAbsent(name, futureMap.get(name));
             if(totaisPorDestinatarios.containsKey(name)) {
-                totaisPorDestinatarios.put(name,totaisPorDestinatarios.get(name).add(futureMap.get(name)));
+                totaisPorDestinatarios.put(name,totaisPorDestinatarios
+                        .get(name).add(futureMap.get(name)));
+
             }
         }
+
+//            futureMap.forEach((name,value) -> {
+//                totaisPorDestinatarios.putIfAbsent(name, futureMap.get(name));
+//                if(totaisPorDestinatarios.containsKey(name)) {
+//                    totaisPorDestinatarios.put(name,totaisPorDestinatarios
+//                            .get(name).add(value));
+//                    }
+//            });
     }
 }

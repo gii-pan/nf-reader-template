@@ -16,6 +16,10 @@ public class Relatorio {
     @Column(name = "valor_total")
     private BigDecimal valorTotal;
 
+    public Relatorio() {
+
+    }
+
     public String getDestinatario() {
         return destinatario;
     }
@@ -29,6 +33,11 @@ public class Relatorio {
     }
 
     public void setValorTotal(BigDecimal valorTotal) {
+        this.valorTotal = valorTotal;
+    }
+
+    public Relatorio(String destinatario, BigDecimal valorTotal) {
+        this.destinatario = destinatario;
         this.valorTotal = valorTotal;
     }
 }
